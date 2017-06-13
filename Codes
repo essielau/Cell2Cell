@@ -1,0 +1,378 @@
+Data Cleansing
+1. csa, churn, calibrat, customer ID have been deleted (We used Excel to do this).
+2. convert numeric variables (31:62, 65,66,68, 70,72 74) into factors.
+3. There are 361 missing observations that should be deleted before running logistic regression.
+4. The result of SPSS Forward stepwise can be found in google drive. 33 variables have been selected for model calibration. 
+Stepwise
+setwd("~/Desktop/CEM")
+CA2<-read.csv("CA2.csv", header=TRUE)
+rm(list=ls())
+ 
+x<-CA2[,-75]
+y<-CA2[,75]
+Y<-as.data.frame(y)
+#factor
+c<-seq(31,62,by=1)
+CA2[,c]<-lapply(CA2[,c],factor)
+CA2$CREDITZ<-as.factor(CA2$CREDITZ)
+CA2$MARRYNO<-as.factor(CA2$MARRYNO)
+ 
+b<-c(65,66,68,70,72,74)
+CA2[,b]<-lapply(CA2[,b],factor)
+#Logistic regression
+lg<-glm(CHURNDEP~.,data=CA2,family=binomial)
+lg
+ 
+#Forward
+forward<-step(lg,direction="forward",trace=1, scope=~.,metho)
+summary(forward)
+ 
+#Backward
+backwards<-step(lg)
+ 
+Logistic regression-CA
+setwd("~/Desktop/CEM")
+CA<-read.csv("C2C_CAnmiss.csv", header=TRUE)
+#rm(list=ls())
+summary(CA)
+ 
+#Logistic regression-CA
+CA$CHURNDEP<-as.factor(CA$CHURNDEP)
+lg<-glm(CHURNDEP~REVENUE + RECCHRGE + ROAM + CHANGEM + CHANGER + 
+          DROPVCE + BLCKVCE + UNANSVCE + CUSTCARE + THREEWAY + INCALLS+ PEAKVCE +
+          MONTHS + UNIQSUBS + PHONES + EQPDAYS +  AGE1 +
+          CHILDREN + CREDITC + CREDITDE + PRIZMUB + REFURB + WEBCAP + 
+          MARRYUN + MAILRES + NEWCELLY + SETPRC + RETCALL,data=CA,family=binomial)
+lg
+summary(lg)
+ 
+#Forward
+#forward<-step(lg2,direction="forward",trace=1, scope=~.,metho)
+#summary(forward)
+#Backward
+#backwards<-step(lg)
+ 
+#Validation data
+VA2<-read.csv("C2C_VA2.csv", header=TRUE)
+summary(VA2)
+VA2$X<-NULL
+#write.csv(VA2,"~/Desktop/CEM/VA2_F.csv")
+churn<-VA2[,"CHURN"]
+VA2$CHURN<-NULL
+summary(VA2)
+#VA2[VA2$EQPDAYS==-5,]
+###
+x_test<-VA2[,c("REVENUE","RECCHRGE","ROAM","CHANGEM","CHANGER", 
+                 "DROPVCE","BLCKVCE","UNANSVCE","CUSTCARE","THREEWAY","INCALLS","PEAKVCE",
+                 "MONTHS","UNIQSUBS","PHONES","EQPDAYS","AGE1",
+                 "CHILDREN","CREDITC","CREDITDE","PRIZMUB","REFURB","WEBCAP", 
+                 "MARRYUN","MAILRES","NEWCELLY","SETPRC","RETCALL")]
+churn
+ 
+#Prediction-VA
+Prob<-predict(lg,x_test,type="response")
+ 
+ 
+#ROC Great
+installed.packages("ROCR")
+library (ROCR)
+ROC_lg<- prediction (Prob,churn)
+ROCperf_lg<-performance (ROC_lg,"tpr","fpr")
+plot(ROCperf_lg,colorize=TRUE)
+abline(a=0, b= 1)
+#auc
+library(pROC)
+roc_log <- roc(as.numeric(churn), as.numeric(Prob))
+auc_log<-auc(roc_log)
+#0.6153
+ 
+#Lift
+VA_lift<-read.csv("C2C_VA2.csv", header=TRUE)
+summary(VA_lift)
+VA_lift$X<-NULL
+ 
+VA_lift<-cbind(VA_lift,Prob)
+VA_s<-VA_lift[order(VA_lift$Prob,decreasing=TRUE),]
+ 
+mean_rate<-mean(VA_lift$CHURN)
+ 
+#10%
+VA_s10<-VA_s[1:floor(0.1*nrow(VA_s)),]
+Lift10<-(sum(VA_s10$CHURN)/nrow(VA_s10))/mean_rate
+Lift10
+#1.775212- 0.10 previous
+#1.877216-0.6
+#1.689865 -0.10
+ 
+#20%
+VA_s20<-VA_s[(floor(0.1*nrow(VA_lift))+1):floor(0.2*nrow(VA_lift)), ]
+Lift20<-(sum(VA_s20$CHURN)/nrow(VA_s20))/mean_rate
+#1.518671
+ 
+#30%
+VA_s30<-VA_s[(floor(0.2*nrow(VA_lift))+1):floor(0.3*nrow(VA_lift)), ]
+Lift30<-(sum(VA_s30$CHURN)/nrow(VA_s30))/mean_rate
+Lift30
+#1.228588
+ 
+#40%
+VA_s40<-VA_s[(floor(0.3*nrow(VA_lift))+1):floor(0.4*nrow(VA_lift)), ]
+Lift40<-(sum(VA_s40$CHURN)/nrow(VA_s40))/mean_rate
+Lift40
+#1.143269
+ 
+#50%
+VA_s50<-VA_s[(floor(0.4*nrow(VA_lift))+1):floor(0.5*nrow(VA_lift)), ]
+Lift50<-(sum(VA_s50$CHURN)/nrow(VA_s50))/mean_rate
+Lift50
+#0.9896959
+ 
+#60%
+VA_s60<-VA_s[(floor(0.5*nrow(VA_lift))+1):floor(0.6*nrow(VA_lift)), ]
+Lift60<-(sum(VA_s60$CHURN)/nrow(VA_s60))/mean_rate
+Lift60
+#0.8534672
+ 
+#70%
+VA_s70<-VA_s[(floor(0.6*nrow(VA_lift))+1):floor(0.7*nrow(VA_lift)), ]
+Lift70<-(sum(VA_s70$CHURN)/nrow(VA_s70))/mean_rate
+Lift70
+#0.7508038
+ 
+#80%
+VA_s80<-VA_s[(floor(0.7*nrow(VA_lift))+1):floor(0.8*nrow(VA_lift)), ]
+Lift80<-(sum(VA_s80$CHURN)/nrow(VA_s80))/mean_rate
+Lift80
+#0.7508038
+ 
+#90%
+VA_s90<-VA_s[(floor(0.8*nrow(VA_lift))+1):floor(0.9*nrow(VA_lift)), ]
+Lift90<-(sum(VA_s90$CHURN)/nrow(VA_s90))/mean_rate
+Lift90
+#0.5972303
+ 
+#Logistic Regression
+setwd("~/Documents/RLabs")
+ 
+#no actvsubs
+data_ca1 <- read.csv(file="111.csv", header=TRUE)
+data_va1 <- read.csv(file="C2C_VA32_1.csv", header=TRUE)
+summary(data_ca1)
+ 
+data_ca1$CHURNDEP <-as.factor(data_ca1$CHURNDEP)
+ 
+lg1<-glm(CHURNDEP~.,data = data_ca1, family=binomial)
+lg1
+summary(lg1)
+ 
+churn1 <- data_va1[,"CHURN"]
+x_test1<-data_va1[,1:28]
+ 
+prob1<-predict(lg1,x_test1,type="response")
+prob1<-as.data.frame(prob1)
+ 
+prd1<-ifelse(prob1>0.5,1,0)
+prd1<-as.vector(prd1)
+ 
+data_va1<-cbind(data_va1,prd1)
+error1<-(sum(abs(churn1-prd1)))
+error1
+ 
+lg1
+summary(lg1)
+ 
+#no uniqsubs
+data_ca2 <- read.csv(file="222.csv", header=TRUE)
+data_va2 <- read.csv(file="C2C_VA32_2.csv", header=TRUE)
+summary(data_ca2)
+ 
+data_ca2$CHURNDEP <-as.factor(data_ca2$CHURNDEP)
+ 
+lg2<-glm(CHURNDEP~.,data = data_ca2, family=binomial)
+lg2
+summary(lg2)
+ 
+churn2 <- data_va2[,"CHURN"]
+x_test2<-data_va2[,1:28]
+ 
+prob2<-predict(lg2,x_test2,type="response")
+prob2<-as.data.frame(prob2)
+ 
+prd2<-ifelse(prob2>0.5,1,0)
+prd2<-as.vector(prd2)
+ 
+data_va2<-cbind(data_va2,prd2)
+error2<-(sum(abs(churn2-prd2)))
+error2
+ 
+Decision Tree & Random Forest. 
+install.packages("foreign")
+library(foreign)
+C2C<-read.spss("~/Documents/UMD/R/CEM/Cell2Cell_SPSS_Data.sav",to.data.frame =TRUE)
+C2C
+rm(list=ls())
+
+#Validation sample
+VA_tree<-read.csv("C2C_VA2.csv", header=TRUE)
+VA_tree$X<-NULL
+x_test_tree<-VA_tree[,-22]
+y_test_tree<-VA_tree[,22]
+summary(y_test_tree)
+mean(y_test_tree)
+ 
+#Decision tree
+setwd("~/Desktop/CEM")
+CA<-read.csv("C2C_CAnmiss.csv",header=TRUE)
+summary(CA)
+install.packages("rpart")
+install.packages("rpart.plot")
+library(rpart.plot)
+library(rpart)
+CA$CHURNDEP<-as.factor(CA$CHURNDEP)
+ree<-rpart(CHURNDEP~.,data=CA, method="class")
+rpart.plot(ree)
+ree$variable.importance
+ 
+#Validation/prediction
+pred_ree<-predict(ree,x_test_tree, type="class")
+prob_ree<-predict(ree,x_test_tree)
+pred_ree
+table(y_test_tree,pred_ree)
+mean(y_test_tree==pred_ree)
+#0.4271602
+pred_ree1<-predict(ree,x_test_tree, type="prob")
+ 
+#ROC
+installed.packages("ROCR")
+library (ROCR)
+ROC_ree<- prediction (as.numeric(pred_ree),as.numeric(y_test_tree))
+ROCperf_ree<-performance (ROC_ree,"tpr","fpr")
+plot(ROCperf_ree,colorize=TRUE)
+abline(a=0, b= 1)
+#plot(ROCperf_lg,lwd=3,avg="vertical",spread.estimate="boxplot",add=TRUE)
+#AUC
+library(pROC)
+roc_ree <- roc(as.numeric(y_test_tree), as.numeric(pred_ree))
+auc_ree<-auc(roc_ree)
+#0.585 -decision tree
+ 
+#randomForest 
+#?randomForest
+install.packages("randomForest")
+library(randomForest)
+CA$CHURNDEP<-as.factor(CA$CHURNDEP)
+#?randomForest
+rf1<-randomForest(CHURNDEP~.,data=CA,importance=TRUE,ntree=1000)
+plot(rf1)
+print(rf1)
+varImpPlot(rf1)
+rf1$confusion
+rf1$importance
+#Validation
+pred_rf1<-predict(rf1,x_test_tree)
+pred_rf1
+table(y_test_tree,pred_rf1)
+mean(y_test_tree==pred_rf1)
+#0.5962-1000
+ 
+library (ROCR)
+ROC_rf1<- prediction (as.numeric(pred_rf1),as.numeric(y_test_tree))
+ROCperf_rf1<-performance (ROC_rf1,"tpr","fpr")
+plot(ROCperf_rf1,colorize=TRUE)
+abline(a=0, b= 1)
+#plot(ROCperf_lg,lwd=3,avg="vertical",spread.estimate="boxplot",add=TRUE)
+#AUC
+library(pROC)
+roc_rf1 <- roc(as.numeric(y_test_tree), as.numeric(pred_rf1))
+auc_rf<-auc(roc_rf1)
+#0.6126
+ 
+#random forest
+#prob_rf<-predict(rf,x_test_tree)
+#prob_rf
+#table(y_test_tree,prob_rf)
+#mean(y_test_tree==prob_rf)
+#0.5906876
+ 
+#tree_pred<-predict(ree,x_test_tree)
+ 
+#ntree=500, predict
+#pred_rf<-predict(rf500,x_test_tree)
+#pred_rf
+#table(y_test_tree,pred_rf)
+#mean(y_test_tree==pred_rf)
+# 0.597965
+ 
+ 
+#randomForest  ntree=4000000
+#?randomForest
+#install.packages("randomForest")
+#library(randomForest)
+#CA$CHURNDEP<-as.factor(CA$CHURNDEP)
+#rf4<-randomForest(CHURNDEP~.,data=CA,importance=TRUE,ntree=40000)
+#plot(rf4)
+#print(rf4)
+#varImpPlot(rf4)
+#rf$confusion
+#rf$importance
+ 
+#pred_rf4<-predict(rf4,x_test_tree)
+#pred_rf4
+#table(y_test_tree,pred_rf4)
+#mean(y_test_tree==pred_rf4)
+ 
+ 
+Combined Model 
+setwd("~/Desktop/CEM")
+VA_CLV<-read.csv("VA_CLV2.csv", header=TRUE)
+ 
+#Logistic_Ram
+model<-cbind(Prob,pred_rf_prob[,2])
+com<-cbind(VA_CLV,model)
+com$combine<-com$Prob*com$V2
+write.csv(com,"~/Desktop/CEM/Combined.csv")
+com<-read.csv("Combined.csv")
+#sort
+com_s<-com[order(com$combine,decreasing=TRUE),]
+ 
+#Lift
+mean_rate<-mean(com_s$CHURN)
+ 
+#10%
+com_s10<-com_s[1:floor(0.1*nrow(com_s)),]
+com_Lift10<-(sum(com_s10$CHURN)/nrow(com_s10))/mean_rate
+com_Lift10
+#2.184876
+sum(com_s10$CHURN)
+sum(com$CHURN)
+ 
+#OR
+or<-com
+or$combine<-NULL
+or$or<-ifelse(or$Prob>=or$V2,or$Prob,or$V2)
+write.csv(or,"~/Desktop/CEM/or.csv")
+ 
+#sort
+or_s<-or[order(or$or,decreasing=TRUE),]
+ 
+#Lift
+mean_rate<-mean(or_s$CHURN)
+ 
+#10%
+or_s10<-or_s[1:floor(0.1*nrow(or_s)),]
+or_Lift10<-(sum(or_s10$CHURN)/nrow(or_s10))/mean_rate
+or_Lift10
+#2.184876
+ 
+ROC Combined (logistic, randomforest, decision tree)
+library (ROCR)
+ROC_ree<- prediction (as.numeric(pred_ree),as.numeric(y_test_tree))
+ROCperf_ree<-performance (ROC_ree,"tpr","fpr")
+plot(ROCperf_ree,col='green')
+plot(ROCperf_rf1,col='red', add=TRUE)
+plot(ROCperf_lg,col='blue', add=TRUE)
+legend (0.71,0.3, legend=c("DT","RF","REG"), col=c("green","red","blue"), lty=1)
+abline(a=0, b= 1)
+ 
+How much time you spent: We met more than 3 times for the project. Each meeting lasted for about 3 hours. After meetings, each of us spent at least 9 hours on the project individually.
+How many runs: About hundreds of runs (since there were lots of warnings and errors).
