@@ -11,3 +11,5 @@ Check the list of variables available in the data set description – can any of
 What incentive offers should be made to which customers to encourage them to remain with Cell2Cell?
 
 How can one be sure that the actions recommended based on the predictive model will work?
+
+The Cell2Cell Churn Modeling.pdf is the final deliverable (slides for presentation).
