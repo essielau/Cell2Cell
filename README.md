@@ -12,4 +12,4 @@ These questions will help you frame your analysis appropriately:
 
   How can one be sure that the actions recommended based on the predictive model will work?
 
-The Cell2Cell Churn Modeling.pdf is the final deliverable (slides for presentation).
+The Cell2Cell Churn Modeling-2.pdf is the final deliverable (slides for presentation).
