@@ -374,5 +374,5 @@ plot(ROCperf_lg,col='blue', add=TRUE)
 legend (0.71,0.3, legend=c("DT","RF","REG"), col=c("green","red","blue"), lty=1)
 abline(a=0, b= 1)
  
-How much time you spent: We met more than 3 times for the project. Each meeting lasted for about 3 hours. After meetings, each of us spent at least 9 hours on the project individually.
-How many runs: About hundreds of runs (since there were lots of warnings and errors).
+# How much time you spent: We met more than 3 times for the project. Each meeting lasted for about 3 hours. After meetings, each of us spent at least 9 hours on the project individually.
+# How many runs: About hundreds of runs (since there were lots of warnings and errors).
